@@ -1,0 +1,1849 @@
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --ink: #293747;
+    --muted: #8794a2;
+
+    --blue: #7895ad;
+    --blue-dark: #5e7d98;
+    --blue-pale: #eaf0f5;
+
+    --line: #e8edf1;
+    --surface: #ffffff;
+    --page: #f6f8fa;
+
+    --green: #82b99a;
+    --red: #e6a0a0;
+
+    --sidebar-width: 238px;
+    --right-width: 330px;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--page);
+    color: var(--ink);
+    font-family: "DM Sans", sans-serif;
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+
+/* =====================================
+   ESTRUTURA GERAL
+===================================== */
+
+.app {
+    min-height: 100vh;
+}
+
+
+/* =====================================
+   BARRA LATERAL
+===================================== */
+
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+
+    width: var(--sidebar-width);
+
+    padding: 30px 20px 22px;
+
+    background: #e9eff4;
+    border-right: 1px solid #dfe7ed;
+
+    display: flex;
+    flex-direction: column;
+
+    z-index: 5;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.logo-icon {
+    width: 39px;
+    height: 39px;
+
+    border-radius: 13px;
+
+    display: grid;
+    place-items: center;
+
+    background: #7895ad;
+    color: white;
+
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.logo h2 {
+    font-size: 19px;
+    letter-spacing: -0.7px;
+}
+
+.logo span {
+    display: block;
+    color: #8392a0;
+    font-size: 10px;
+    margin-top: 1px;
+}
+
+.sidebar-title {
+    margin: 47px 8px 13px;
+
+    color: #98a5b0;
+
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.3px;
+}
+
+.navigation {
+    display: grid;
+    gap: 7px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    min-height: 43px;
+
+    padding: 0 12px;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    color: #6f7f8d;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nav-item span {
+    width: 19px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.nav-item.active {
+    color: #526f88;
+    background: #d9e4ed;
+}
+
+.nav-item.disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+}
+
+.sidebar-bottom .sidebar-title {
+    margin: 0 8px 13px;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 11px 9px;
+
+    border-radius: 12px;
+    background: #f4f7f9;
+}
+
+.profile-icon {
+    width: 32px;
+    height: 32px;
+
+    border-radius: 10px;
+
+    display: grid;
+    place-items: center;
+
+    background: #dbe7ef;
+    color: #66839c;
+}
+
+.profile-card strong {
+    display: block;
+    font-size: 11px;
+}
+
+.profile-card small {
+    display: block;
+    color: var(--muted);
+    font-size: 9px;
+    margin-top: 3px;
+}
+
+.sidebar-quote {
+    color: #8b9aa7;
+    font-size: 10px;
+    line-height: 1.5;
+    padding: 18px 7px 0;
+}
+
+
+/* =====================================
+   CONTEÚDO CENTRAL
+===================================== */
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    margin-right: var(--right-width);
+
+    padding: 37px clamp(22px, 3vw, 48px) 35px;
+
+    max-width: 1600px;
+}
+
+.topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    margin-bottom: 28px;
+}
+
+.eyebrow {
+    color: #9aa7b2;
+
+    font-size: 9px;
+    letter-spacing: 1.25px;
+    font-weight: 700;
+
+    margin-bottom: 7px;
+}
+
+h1,
+h2,
+h3 {
+    font-family: "Manrope", sans-serif;
+}
+
+h1 {
+    font-size: 27px;
+    letter-spacing: -0.8px;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.today-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 30px;
+
+    padding: 9px 13px;
+
+    color: #7d8b98;
+    font-size: 10px;
+}
+
+.today-dot {
+    width: 7px;
+    height: 7px;
+
+    background: var(--green);
+    border-radius: 50%;
+}
+
+
+/* =====================================
+   CALENDÁRIO PRINCIPAL
+===================================== */
+
+.panel,
+.stat-card {
+    background: var(--surface);
+
+    border: 1px solid var(--line);
+    border-radius: 16px;
+
+    box-shadow: 0 5px 20px rgba(45, 67, 85, 0.025);
+}
+
+.calendar-section {
+    padding: 23px 24px 17px;
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 23px;
+}
+
+.section-heading h2 {
+    font-size: 17px;
+    letter-spacing: -0.4px;
+}
+
+.month-controls {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.month-controls strong {
+    min-width: 125px;
+    text-align: center;
+
+    text-transform: capitalize;
+    font-size: 12px;
+}
+
+.month-controls button,
+.mini-calendar-header button {
+    border: 1px solid var(--line);
+    background: white;
+    color: #7f8e9b;
+
+    border-radius: 8px;
+
+    width: 27px;
+    height: 27px;
+
+    font-size: 19px;
+    line-height: 1;
+}
+
+.month-controls button:hover,
+.mini-calendar-header button:hover {
+    background: var(--blue-pale);
+    color: var(--blue-dark);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-weekdays {
+    padding-bottom: 8px;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.calendar-weekdays div {
+    text-align: center;
+
+    color: #a2adb7;
+
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+#mainCalendar {
+    grid-auto-rows: minmax(104px, auto);
+}
+
+.day-cell {
+    position: relative;
+    min-width: 0;
+
+    padding: 8px 7px;
+
+    border-right: 1px solid #f0f2f4;
+    border-bottom: 1px solid #f0f2f4;
+}
+
+.day-cell:nth-child(7n) {
+    border-right: 0;
+}
+
+.day-cell.outside {
+    background: #fbfcfd;
+}
+
+.day-number {
+    display: inline-grid;
+    place-items: center;
+
+    width: 25px;
+    height: 25px;
+
+    border-radius: 50%;
+
+    color: #778694;
+    font-size: 10px;
+}
+
+.day-cell.today .day-number {
+    color: white;
+    background: var(--blue);
+    font-weight: 700;
+}
+
+.day-cell.outside .day-number {
+    color: #c5cdd4;
+}
+
+.add-note {
+    position: absolute;
+
+    right: 7px;
+    top: 8px;
+
+    width: 22px;
+    height: 22px;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: #eaf0f5;
+    color: #64829b;
+
+    opacity: 0;
+    transition: opacity 0.15s;
+
+    font-size: 16px;
+}
+
+.day-cell:hover .add-note,
+.add-note:focus {
+    opacity: 1;
+}
+
+.day-notes {
+    display: grid;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.note-chip {
+    display: block;
+    width: 100%;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    border: 0;
+    border-left: 3px solid #8ca8bd;
+
+    border-radius: 4px;
+
+    padding: 5px;
+
+    background: #edf3f7;
+    color: #617b90;
+
+    text-align: left;
+    font-size: 9px;
+}
+
+.note-chip:hover {
+    background: #e1ebf2;
+}
+
+.calendar-legend {
+    display: flex;
+    gap: 18px;
+
+    padding-top: 14px;
+
+    color: #9aa6b0;
+    font-size: 9px;
+}
+
+.calendar-legend span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-dot {
+    width: 7px;
+    height: 7px;
+
+    display: inline-block;
+    border-radius: 50%;
+}
+
+.note-legend {
+    background: #8ca8bd;
+}
+
+.study-legend {
+    background: var(--green);
+}
+
+
+/* =====================================
+   AVISO INFERIOR
+===================================== */
+
+.bottom-note {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-top: 19px;
+    padding: 15px 17px;
+
+    border-radius: 13px;
+    background: #edf2f6;
+}
+
+.bottom-note-icon {
+    display: grid;
+    place-items: center;
+
+    width: 32px;
+    height: 32px;
+
+    border-radius: 10px;
+
+    background: #dce7ef;
+    color: #69869e;
+}
+
+.bottom-note strong {
+    font-size: 10px;
+}
+
+.bottom-note p {
+    color: #8a98a4;
+    font-size: 9px;
+    margin-top: 3px;
+}
+
+
+/* =====================================
+   PAINEL DIREITO
+===================================== */
+
+.right-panel {
+    position: fixed;
+    inset: 0 0 0 auto;
+
+    width: var(--right-width);
+
+    overflow-y: auto;
+
+    padding: 25px 20px;
+
+    background: #fbfcfd;
+    border-left: 1px solid var(--line);
+
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.stat-card {
+    padding: 17px 17px 15px;
+}
+
+.card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-heading .eyebrow {
+    font-size: 8px;
+    margin-bottom: 4px;
+}
+
+.card-heading h3 {
+    font-size: 14px;
+}
+
+.soft-icon {
+    display: grid;
+    place-items: center;
+
+    width: 30px;
+    height: 30px;
+
+    border-radius: 9px;
+
+    background: #edf2f6;
+    color: #7792a8;
+
+    font-size: 15px;
+}
+
+
+/* =====================================
+   QUESTÕES
+===================================== */
+
+.question-numbers {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+
+    margin: 19px 0 14px;
+}
+
+.question-numbers div:not(.number-divider) {
+    display: grid;
+    gap: 3px;
+}
+
+.question-numbers strong {
+    font: 700 22px "Manrope", sans-serif;
+}
+
+.question-numbers span {
+    color: #9aa6b0;
+    font-size: 9px;
+}
+
+.number-divider {
+    height: 29px;
+    width: 1px;
+    background: var(--line);
+}
+
+.progress-track {
+    width: 100%;
+    height: 7px;
+
+    border-radius: 20px;
+    background: #edf1f4;
+
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0;
+    height: 100%;
+
+    background: #8ba8bd;
+    border-radius: inherit;
+
+    transition: width 0.2s;
+}
+
+.progress-caption {
+    display: flex;
+    justify-content: space-between;
+
+    margin-top: 8px;
+
+    color: #9aa6b0;
+    font-size: 9px;
+}
+
+.progress-caption strong {
+    color: #6f879b;
+}
+
+.mini-edit {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.mini-edit label {
+    display: grid;
+    gap: 5px;
+    flex: 1;
+
+    color: #9aa6b0;
+    font-size: 8px;
+}
+
+.mini-edit input {
+    min-width: 0;
+    width: 100%;
+
+    border: 1px solid #e8edf1;
+    border-radius: 7px;
+
+    padding: 7px 8px;
+
+    color: var(--ink);
+    font-size: 10px;
+
+    outline: none;
+}
+
+.mini-edit input:focus {
+    border-color: #9bb2c5;
+}
+
+.helper-text {
+    color: #a5afb8;
+    font-size: 8px;
+    line-height: 1.45;
+    margin-top: 9px;
+}
+
+
+/* =====================================
+   GRÁFICO REDONDO
+===================================== */
+
+.chart-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+
+    padding: 18px 0 10px;
+}
+
+.donut {
+    width: 112px;
+    height: 112px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background: conic-gradient(
+        #82b99a 0deg 0deg,
+        #e6a0a0 0deg 360deg
+    );
+
+    position: relative;
+}
+
+.donut::before {
+    content: "";
+
+    position: absolute;
+
+    width: 79px;
+    height: 79px;
+
+    border-radius: 50%;
+    background: white;
+}
+
+.donut-center {
+    z-index: 1;
+
+    display: grid;
+    text-align: center;
+    gap: 2px;
+}
+
+.donut-center strong {
+    font: 700 19px "Manrope", sans-serif;
+}
+
+.donut-center span {
+    color: #9aa6b0;
+    font-size: 8px;
+}
+
+.chart-legend {
+    display: grid;
+    gap: 13px;
+    min-width: 95px;
+}
+
+.chart-legend div {
+    display: grid;
+    grid-template-columns: 8px 1fr auto;
+    align-items: center;
+    gap: 6px;
+}
+
+.chart-legend span {
+    color: #8c99a4;
+    font-size: 9px;
+}
+
+.chart-legend strong {
+    font-size: 10px;
+}
+
+.chart-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.correct-dot {
+    background: var(--green);
+}
+
+.wrong-dot {
+    background: var(--red);
+}
+
+.two-inputs {
+    margin-top: 6px;
+}
+
+
+/* =====================================
+   MINI CALENDÁRIO
+===================================== */
+
+.mini-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 18px 0 12px;
+}
+
+.mini-calendar-header strong {
+    font-size: 10px;
+    text-transform: capitalize;
+}
+
+.mini-calendar-header button {
+    width: 22px;
+    height: 22px;
+    font-size: 15px;
+}
+
+.mini-weekdays,
+.mini-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+}
+
+.mini-weekdays {
+    color: #a5afb8;
+    font-size: 8px;
+    margin-bottom: 7px;
+}
+
+.mini-calendar {
+    gap: 4px 2px;
+}
+
+.mini-day {
+    position: relative;
+
+    display: grid;
+    place-items: center;
+
+    width: 27px;
+    height: 27px;
+
+    justify-self: center;
+
+    border-radius: 50%;
+
+    color: #788794;
+    font-size: 9px;
+
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.mini-day:not(.outside):hover {
+    background: #e5f1e9;
+    color: #648c74;
+}
+
+.mini-day.studied:hover {
+    background: #6fa988;
+    color: white;
+}
+
+.mini-day.outside {
+    color: #cbd2d8;
+}
+
+.mini-day.studied {
+    color: white;
+    background: var(--green);
+}
+
+.mini-day.today:not(.studied) {
+    box-shadow: inset 0 0 0 1px #91a9bc;
+}
+
+.mini-day.has-note::after {
+    content: "";
+
+    position: absolute;
+
+    width: 4px;
+    height: 4px;
+
+    right: 1px;
+    top: 1px;
+
+    border-radius: 50%;
+
+    background: #7898b1;
+    border: 1px solid white;
+}
+
+.mini-day.studied.has-note::after {
+    background: #527b65;
+}
+
+
+/* =====================================
+   FREQUÊNCIA E OFENSIVA
+===================================== */
+
+.frequency-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 17px 0 13px;
+    padding: 12px 10px;
+
+    border-radius: 10px;
+    background: #f5f8fa;
+}
+
+.frequency-summary > div {
+    display: grid;
+    gap: 3px;
+}
+
+.frequency-summary strong {
+    font: 700 19px "Manrope", sans-serif;
+    color: #6f8e80;
+}
+
+.frequency-summary span {
+    color: #9aa6b0;
+    font-size: 8px;
+}
+
+.frequency-summary .streak {
+    text-align: right;
+}
+
+.frequency-summary .streak strong {
+    color: #9a896c;
+    font-size: 13px;
+}
+
+.frequency-summary .streak b {
+    font: inherit;
+}
+
+.attendance-button {
+    width: 100%;
+
+    border: 0;
+    border-radius: 9px;
+
+    padding: 10px;
+
+    background: #e5f1e9;
+    color: #648c74;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.attendance-button:hover {
+    background: #d9ebdf;
+}
+
+.attendance-button.is-marked {
+    background: #83b99a;
+    color: white;
+}
+
+.attendance-hint {
+    text-align: center;
+    color: #a4afb8;
+    font-size: 8px;
+    margin-top: 8px;
+}
+
+
+/* =====================================
+   MODAL DE ANOTAÇÕES
+===================================== */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+
+    z-index: 20;
+
+    display: grid;
+    place-items: center;
+
+    padding: 20px;
+
+    background: rgba(37, 51, 64, 0.28);
+}
+
+.modal-backdrop[hidden] {
+    display: none;
+}
+
+.note-modal {
+    position: relative;
+
+    width: min(100%, 440px);
+
+    padding: 27px;
+
+    border-radius: 17px;
+
+    background: white;
+
+    box-shadow: 0 18px 60px rgba(33, 48, 61, 0.18);
+}
+
+.modal-close {
+    position: absolute;
+
+    right: 17px;
+    top: 14px;
+
+    border: 0;
+    background: none;
+
+    color: #8e9aa5;
+    font-size: 24px;
+}
+
+.note-modal h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.note-label {
+    display: block;
+
+    color: #778694;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    margin: 13px 0 7px;
+}
+
+.note-input,
+.note-textarea {
+    width: 100%;
+
+    border: 1px solid #e5ebef;
+    border-radius: 9px;
+
+    padding: 10px 11px;
+
+    outline: none;
+
+    color: var(--ink);
+    font-size: 11px;
+
+    resize: vertical;
+}
+
+.note-input:focus,
+.note-textarea:focus {
+    border-color: #9bb2c5;
+}
+
+.note-textarea {
+    min-height: 95px;
+}
+
+.modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 19px;
+}
+
+.action-spacer {
+    flex: 1;
+}
+
+.save-button,
+.cancel-button,
+.delete-button {
+    border: 0;
+    border-radius: 8px;
+
+    padding: 9px 12px;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.save-button {
+    background: #7895ad;
+    color: white;
+}
+
+.cancel-button {
+    background: #f0f3f5;
+    color: #71808d;
+}
+
+.delete-button {
+    background: #fbebeb;
+    color: #b87575;
+}
+
+
+/* =====================================
+   RESPONSIVIDADE
+===================================== */
+
+@media (max-width: 1120px) {
+
+    :root {
+        --right-width: 290px;
+        --sidebar-width: 210px;
+    }
+
+    .right-panel {
+        padding: 20px 14px;
+    }
+
+    .main-content {
+        padding-left: 22px;
+        padding-right: 22px;
+    }
+
+    .calendar-section {
+        padding: 19px 16px 15px;
+    }
+
+    #mainCalendar {
+        grid-auto-rows: minmax(90px, auto);
+    }
+
+}
+
+@media (max-width: 850px) {
+
+    :root {
+        --sidebar-width: 190px;
+        --right-width: 0px;
+    }
+
+    .right-panel {
+        position: static;
+
+        width: auto;
+
+        margin-left: var(--sidebar-width);
+
+        border-left: 0;
+        border-top: 1px solid var(--line);
+
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        align-items: start;
+    }
+
+    .frequency-card {
+        grid-column: 1 / -1;
+    }
+
+    .main-content {
+        margin-right: 0;
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    :root {
+        --sidebar-width: 64px;
+    }
+
+    .sidebar {
+        padding: 18px 8px;
+        align-items: center;
+    }
+
+    .logo {
+        padding: 0;
+    }
+
+    .logo > div:last-child,
+    .sidebar-title,
+    .sidebar-bottom {
+        display: none;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .navigation {
+        margin-top: 35px;
+        width: 100%;
+    }
+
+    .nav-item {
+        justify-content: center;
+        padding: 0;
+        font-size: 0;
+    }
+
+    .nav-icon,
+    .nav-item span {
+        font-size: 19px;
+    }
+
+    .main-content {
+        padding: 24px 12px;
+    }
+
+    .topbar {
+        gap: 8px;
+    }
+
+    h1 {
+        font-size: 23px;
+    }
+
+    .subtitle {
+        max-width: 220px;
+        line-height: 1.4;
+    }
+
+    .today-pill {
+        font-size: 0;
+        padding: 10px;
+    }
+
+    .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 13px;
+    }
+
+    .month-controls {
+        align-self: stretch;
+        justify-content: space-between;
+    }
+
+    .calendar-section {
+        padding: 16px 8px 13px;
+    }
+
+    #mainCalendar {
+        grid-auto-rows: minmax(72px, auto);
+    }
+
+    .day-cell {
+        padding: 5px 3px;
+    }
+
+    .day-number {
+        width: 21px;
+        height: 21px;
+        font-size: 9px;
+    }
+
+    .add-note {
+        opacity: 1;
+        width: 17px;
+        height: 17px;
+        right: 2px;
+        top: 6px;
+        font-size: 13px;
+    }
+
+    .note-chip {
+        font-size: 7px;
+        padding: 4px 3px;
+    }
+
+    .calendar-legend {
+        gap: 10px;
+        font-size: 8px;
+        flex-wrap: wrap;
+    }
+
+    .right-panel {
+        margin-left: var(--sidebar-width);
+        padding: 12px;
+        grid-template-columns: 1fr;
+    }
+
+    .frequency-card {
+        grid-column: auto;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+}
+
+
+
+/* =====================================
+   NAVEGAÇÃO ENTRE TELAS
+===================================== */
+
+[hidden] {
+    display: none !important;
+}
+
+.nav-item:not(.disabled) {
+    cursor: pointer;
+}
+
+.questions-page {
+    min-height: 75vh;
+}
+
+.questions-header {
+    margin-bottom: 25px;
+}
+
+.questions-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.folder-create-button,
+.question-create-button {
+    border: 0;
+    border-radius: 9px;
+    padding: 11px 16px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.folder-create-button {
+    background: #e8eef3;
+    color: #66829a;
+}
+
+.question-create-button {
+    background: #7895ad;
+    color: white;
+}
+
+.folder-create-button:hover {
+    background: #dce6ee;
+}
+
+.question-create-button:hover {
+    background: #69869e;
+}
+
+
+/* =====================================
+   CAMINHO DAS PASTAS
+===================================== */
+
+.folder-breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+    color: #94a1ac;
+    font-size: 10px;
+}
+
+.breadcrumb-item {
+    border: 0;
+    background: none;
+    color: #7895ad;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.breadcrumb-item:hover {
+    text-decoration: underline;
+}
+
+
+/* =====================================
+   LISTA DE PASTAS E QUESTÕES
+===================================== */
+
+.questions-container {
+    background: white;
+    border: 1px solid #e8edf1;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.questions-list-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 65px 75px 30px;
+    gap: 8px;
+    align-items: center;
+    padding: 14px 17px;
+    background: #f8fafb;
+    border-bottom: 1px solid #edf0f3;
+
+    color: #9aa6b0;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.questions-list-header span:not(:first-child) {
+    text-align: center;
+}
+
+.folder-row,
+.question-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 65px 75px 30px;
+    gap: 8px;
+    align-items: center;
+
+    min-height: 54px;
+    padding: 9px 17px;
+
+    border-bottom: 1px solid #f0f2f4;
+}
+
+.folder-row:hover,
+.question-row:hover {
+    background: #fafcfd;
+}
+
+.folder-open {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    min-width: 0;
+
+    border: 0;
+    background: none;
+    color: #5f7e98;
+
+    font-size: 11px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.folder-open span {
+    font-size: 18px;
+}
+
+.question-name-input {
+    width: 100%;
+    min-width: 0;
+
+    border: 1px solid transparent;
+    border-radius: 6px;
+
+    padding: 7px 8px;
+
+    background: transparent;
+    color: #46596a;
+
+    font-size: 11px;
+    outline: none;
+}
+
+.question-name-input:hover {
+    background: #f5f8fa;
+}
+
+.question-name-input:focus {
+    background: white;
+    border-color: #9bb2c5;
+}
+
+.question-name-input::placeholder {
+    color: #aab5be;
+}
+
+.question-check {
+    display: grid;
+    place-items: center;
+}
+
+.question-check input {
+    appearance: none;
+
+    width: 17px;
+    height: 17px;
+
+    border: 1px solid #d8e0e6;
+    border-radius: 5px;
+
+    background: white;
+
+    cursor: pointer;
+    position: relative;
+}
+
+.question-check input:checked {
+    background: #83b99a;
+    border-color: #83b99a;
+}
+
+.question-check input:checked::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+
+    display: grid;
+    place-items: center;
+
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.question-check input:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.question-open {
+    border: 0;
+    background: none;
+    color: #8294a3;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.question-open:hover {
+    color: #54748e;
+}
+
+.delete-item {
+    border: 0;
+    background: none;
+    color: #bd8888;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.empty-questions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    padding: 55px 15px;
+
+    color: #91a0ad;
+    text-align: center;
+}
+
+.empty-questions > span {
+    font-size: 25px;
+    color: #9bb2c5;
+}
+
+.empty-questions strong {
+    color: #718495;
+    font-size: 12px;
+}
+
+.empty-questions p {
+    font-size: 10px;
+}
+
+
+/* =====================================
+   MODAL DE QUESTÃO
+===================================== */
+
+.question-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+
+    display: grid;
+    place-items: center;
+
+    padding: 20px;
+
+    background: rgba(37, 51, 64, 0.35);
+}
+
+.question-modal {
+    width: min(100%, 760px);
+    max-height: 90vh;
+    overflow-y: auto;
+
+    padding: 25px;
+
+    border-radius: 17px;
+    background: white;
+
+    box-shadow: 0 18px 60px rgba(33, 48, 61, 0.18);
+}
+
+.question-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.question-modal-header h2 {
+    font-size: 20px;
+}
+
+
+/* =====================================
+   ÁREAS DE IMAGEM
+===================================== */
+
+.question-image-area,
+.tab-image-area {
+    padding: 17px;
+
+    border: 1px dashed #cbd7e0;
+    border-radius: 11px;
+
+    background: #fafcfd;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    margin-bottom: 16px;
+}
+
+.image-area-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.image-area-title strong,
+.tab-image-area strong {
+    font-size: 11px;
+    color: #647c91;
+}
+
+.image-area-title span {
+    font-size: 9px;
+    color: #a0abb5;
+}
+
+.question-image-area img,
+.tab-image-area img {
+    display: block;
+    max-width: 100%;
+    max-height: 350px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.image-upload-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 9px 14px;
+
+    border-radius: 8px;
+
+    background: #eaf0f5;
+    color: #66839b;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.image-upload-button:hover {
+    background: #dce7ef;
+}
+
+.remove-image-button {
+    border: 0;
+    background: none;
+    color: #bd8888;
+    font-size: 9px;
+    cursor: pointer;
+}
+
+
+/* =====================================
+   ABAS
+===================================== */
+
+.question-tabs {
+    display: flex;
+    gap: 7px;
+
+    border-bottom: 1px solid #e8edf1;
+    margin-bottom: 17px;
+}
+
+.question-tab {
+    border: 0;
+    border-bottom: 2px solid transparent;
+
+    padding: 11px 15px;
+
+    background: none;
+    color: #94a1ac;
+
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.question-tab.active {
+    color: #66839b;
+    border-bottom-color: #7895ad;
+    font-weight: 700;
+}
+
+.question-tab-content {
+    display: grid;
+    gap: 15px;
+}
+
+
+/* =====================================
+   TEXTO DA RESOLUÇÃO E GABARITO
+===================================== */
+
+.tab-image-area {
+    margin-bottom: 0;
+}
+
+.tab-writing-area {
+    padding: 16px;
+
+    border: 1px solid #e8edf1;
+    border-radius: 11px;
+}
+
+.writing-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 12px;
+}
+
+.writing-heading strong {
+    font-size: 11px;
+    color: #617b90;
+}
+
+.writing-heading button,
+#confirmQuestionText {
+    border: 0;
+    border-radius: 7px;
+
+    padding: 8px 12px;
+
+    background: #eaf0f5;
+    color: #66839b;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+#questionText {
+    width: 100%;
+    min-height: 140px;
+
+    resize: vertical;
+
+    border: 1px solid #e8edf1;
+    border-radius: 8px;
+
+    padding: 12px;
+
+    font: inherit;
+    font-size: 11px;
+    line-height: 1.6;
+
+    color: #536678;
+    outline: none;
+}
+
+#questionText:focus {
+    border-color: #9bb2c5;
+}
+
+#questionText:read-only {
+    background: #fafcfd;
+}
+
+#confirmQuestionText {
+    margin-top: 10px;
+    background: #e5f1e9;
+    color: #648c74;
+}
+
+@media (max-width: 600px) {
+
+    .questions-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .questions-list-header,
+    .folder-row,
+    .question-row {
+        grid-template-columns: minmax(0, 1fr) 55px 55px 55px 30px;
+        gap: 4px;
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
+    @media (max-width: 600px) {
+    .questions-list-header,
+    .folder-row,
+    .question-row {
+        grid-template-columns: minmax(0, 1fr) 38px 38px 38px 24px;
+    }
+    }
+
+    .question-modal {
+        padding: 16px;
+    }
+
+    .question-tab {
+        padding: 10px 8px;
+        font-size: 10px;
+    }
+
+}
