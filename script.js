@@ -132,7 +132,7 @@ function notesFor(key) {
    CALENDÁRIO PRINCIPAL
 ===================================== */
 
-function renderMainCalendar() {
+function renderCalendar() {
 
     $("#monthTitle").textContent = monthName(viewDate);
 
@@ -1863,3 +1863,1035 @@ renderAll();
 renderFolderSystem();
 
 renderQuestions();
+
+
+/* =====================================================
+   SISTEMA DE ARRASTAR, TAGS E FILTROS
+   Cole este bloco no FINAL do script.js
+===================================================== */
+
+data.tags ??= [];
+
+let selectedTagFilters = [];
+let selectedStatusFilter = "all";
+let draggedItem = null;
+
+
+/* =====================================================
+   ESTILOS
+===================================================== */
+
+(function installQuestionTools() {
+    if ($("#questionToolsStyles")) return;
+
+    const style = document.createElement("style");
+
+    style.id = "questionToolsStyles";
+
+    style.textContent = `
+        .question-tools {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 14px 0;
+        }
+
+        .question-tools-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 160px;
+        }
+
+        .question-tools label {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .question-tools select,
+        .question-tools button {
+            min-height: 36px;
+            border: 1px solid #dce5eb;
+            border-radius: 9px;
+            padding: 7px 10px;
+            background: white;
+            color: #465565;
+            cursor: pointer;
+        }
+
+        .question-tools select[multiple] {
+            min-width: 190px;
+            min-height: 76px;
+        }
+
+        .question-tools button:hover,
+        .question-tag-button:hover {
+            background: #f3f8fb;
+        }
+
+        .question-tools-hint {
+            font-size: 11px;
+            color: #8a9aa8;
+        }
+
+        .question-name-cell {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .question-name-cell .question-name-input {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .question-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .question-tag {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .question-tag-button {
+            align-self: flex-start;
+            padding: 3px 8px;
+            font-size: 10px;
+            border: 1px solid #dce5eb;
+            background: white;
+            color: #607487;
+            border-radius: 9px;
+            cursor: pointer;
+        }
+
+        .question-row,
+        .folder-row {
+            cursor: grab;
+        }
+
+        .question-row {
+            grid-template-columns:
+                minmax(0, 1fr) 65px 65px 65px 30px !important;
+        }
+
+        .folder-row {
+            grid-template-columns:
+                minmax(0, 1fr) 65px 65px 65px 30px !important;
+        }
+
+        .question-row.dragging,
+        .folder-row.dragging {
+            opacity: .42;
+        }
+
+        .question-row.drag-over,
+        .folder-row.drag-over,
+        .folder-row.drop-target {
+            outline: 2px dashed #9bbdce;
+            outline-offset: -2px;
+            background: #f1f8fb;
+        }
+
+        @media (max-width: 600px) {
+            .question-tools {
+                align-items: stretch;
+            }
+
+            .question-tools-group {
+                flex: 1 1 140px;
+            }
+
+            .question-tools select[multiple] {
+                width: 100%;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    const breadcrumb = $("#folderBreadcrumb");
+
+    const tools = document.createElement("div");
+
+    tools.className = "question-tools";
+    tools.id = "questionTools";
+
+    tools.innerHTML = `
+        <div class="question-tools-group">
+            <label>Filtrar por tags</label>
+
+            <select id="questionTagFilter" multiple>
+            </select>
+
+            <span class="question-tools-hint">
+                Use Ctrl ou Cmd para selecionar várias.
+            </span>
+        </div>
+
+        <div class="question-tools-group">
+            <label>Situação</label>
+
+            <select id="questionStatusFilter">
+                <option value="all">Todas as questões</option>
+                <option value="pending">Não feitas</option>
+                <option value="done">Feitas</option>
+                <option value="correct">Acertos</option>
+                <option value="wrong">Erros</option>
+            </select>
+        </div>
+
+        <div class="question-tools-group">
+            <label>Tags personalizadas</label>
+
+            <button type="button" id="manageQuestionTags">
+                ＋ Criar / gerenciar tags
+            </button>
+        </div>
+
+        <div class="question-tools-group">
+            <label>Exibição</label>
+
+            <button type="button" id="clearQuestionFilters">
+                Limpar filtros
+            </button>
+        </div>
+    `;
+
+    if (breadcrumb) {
+        breadcrumb.parentNode.insertBefore(
+            tools,
+            breadcrumb
+        );
+    }
+
+    $("#questionTagFilter").addEventListener("change", () => {
+        selectedTagFilters = Array.from(
+            $("#questionTagFilter").selectedOptions
+        ).map(option => option.value);
+
+        renderFolderSystem();
+    });
+
+    $("#questionStatusFilter").addEventListener("change", () => {
+        selectedStatusFilter = $("#questionStatusFilter").value;
+
+        renderFolderSystem();
+    });
+
+    $("#manageQuestionTags").addEventListener(
+        "click",
+        manageQuestionTags
+    );
+
+    $("#clearQuestionFilters").addEventListener("click", () => {
+        selectedTagFilters = [];
+        selectedStatusFilter = "all";
+
+        $("#questionTagFilter").selectedIndex = -1;
+        $("#questionStatusFilter").value = "all";
+
+        renderFolderSystem();
+    });
+
+})();
+
+
+/* =====================================================
+   TAGS
+===================================================== */
+
+function tagColor(index) {
+
+    const colors = [
+        "#e8d9f4",
+        "#d8e9f8",
+        "#d9eee4",
+        "#f8e5cf",
+        "#f4dce2",
+        "#e5e8c9",
+        "#d8e9e8",
+        "#f1e0cf"
+    ];
+
+    return colors[index % colors.length];
+}
+
+
+function refreshTagFilter() {
+
+    const select = $("#questionTagFilter");
+
+    if (!select) return;
+
+    const previous = selectedTagFilters.slice();
+
+    select.innerHTML = "";
+
+    data.tags.forEach(tag => {
+
+        const option = document.createElement("option");
+
+        option.value = tag.id;
+        option.textContent = tag.name;
+
+        option.selected = previous.includes(tag.id);
+
+        select.appendChild(option);
+
+    });
+
+    selectedTagFilters = previous.filter(id =>
+        data.tags.some(tag => tag.id === id)
+    );
+
+}
+
+
+/* =====================================================
+   CRIAR, EDITAR E EXCLUIR TAGS
+===================================================== */
+
+function manageQuestionTags() {
+
+    const action = prompt(
+        "Digite o nome da nova tag.\n" +
+        "Para editar ou excluir uma tag, digite: gerenciar"
+    );
+
+    if (!action) return;
+
+    if (action.trim().toLowerCase() === "gerenciar") {
+
+        if (!data.tags.length) {
+            alert("Você ainda não criou nenhuma tag.");
+            return;
+        }
+
+        const list = data.tags.map((tag, index) =>
+            `${index + 1}. ${tag.name}`
+        ).join("\n");
+
+        const choice = Number(prompt(
+            `Suas tags:\n${list}\n\n` +
+            "Digite o número da tag que deseja editar ou excluir:"
+        ));
+
+        const tag = data.tags[choice - 1];
+
+        if (!tag) return;
+
+        const operation = prompt(
+            `Tag: ${tag.name}\nDigite "editar" ou "excluir":`
+        );
+
+        if (!operation) return;
+
+        if (operation.trim().toLowerCase() === "excluir") {
+
+            if (!confirm(
+                `Excluir a tag "${tag.name}" de todas as questões?`
+            )) return;
+
+            data.tags = data.tags.filter(
+                item => item.id !== tag.id
+            );
+
+            data.questionItems.forEach(question => {
+
+                question.tags = (question.tags || []).filter(
+                    id => id !== tag.id
+                );
+
+            });
+
+            selectedTagFilters = selectedTagFilters.filter(
+                id => id !== tag.id
+            );
+
+        } else if (operation.trim().toLowerCase() === "editar") {
+
+            const newName = prompt(
+                "Novo nome da tag:",
+                tag.name
+            );
+
+            if (newName && newName.trim()) {
+                tag.name = newName.trim();
+            }
+
+        }
+
+    } else {
+
+        const name = action.trim();
+
+        if (data.tags.some(tag =>
+            tag.name.toLowerCase() === name.toLowerCase()
+        )) {
+            alert("Já existe uma tag com esse nome.");
+            return;
+        }
+
+        data.tags.push({
+            id: generateId(),
+            name,
+            color: tagColor(data.tags.length)
+        });
+
+    }
+
+    saveData();
+
+    refreshTagFilter();
+
+    renderFolderSystem();
+
+}
+
+
+/* =====================================================
+   ADICIONAR TAGS À QUESTÃO
+===================================================== */
+
+function editQuestionTags(question) {
+
+    const existing = (question.tags || [])
+        .map(id => data.tags.find(tag => tag.id === id)?.name)
+        .filter(Boolean);
+
+    const answer = prompt(
+        `Tags atuais: ${existing.join(", ") || "nenhuma"}\n\n` +
+        "Digite os nomes das tags separados por vírgula.\n" +
+        "Tags inexistentes serão criadas:",
+        existing.join(", ")
+    );
+
+    if (answer === null) return;
+
+    const names = answer
+        .split(",")
+        .map(name => name.trim())
+        .filter(Boolean);
+
+    const ids = [];
+
+    names.forEach(name => {
+
+        let tag = data.tags.find(item =>
+            item.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (!tag) {
+
+            tag = {
+                id: generateId(),
+                name,
+                color: tagColor(data.tags.length)
+            };
+
+            data.tags.push(tag);
+
+        }
+
+        if (!ids.includes(tag.id)) {
+            ids.push(tag.id);
+        }
+
+    });
+
+    question.tags = ids;
+
+    saveData();
+
+    refreshTagFilter();
+
+    renderFolderSystem();
+
+}
+
+
+/* =====================================================
+   FILTROS
+===================================================== */
+
+function questionMatchesFilters(question) {
+
+    const tags = question.tags || [];
+
+    // Todas as tags selecionadas precisam estar na questão.
+    const matchesTags =
+        !selectedTagFilters.length ||
+        selectedTagFilters.every(id => tags.includes(id));
+
+    let matchesStatus = true;
+
+    if (selectedStatusFilter === "pending") {
+        matchesStatus = !question.done;
+    }
+
+    if (selectedStatusFilter === "done") {
+        matchesStatus = !!question.done;
+    }
+
+    if (selectedStatusFilter === "correct") {
+        matchesStatus = !!question.done && !!question.correct;
+    }
+
+    if (selectedStatusFilter === "wrong") {
+        matchesStatus = !!question.done && !!question.wrong;
+    }
+
+    return matchesTags && matchesStatus;
+
+}
+
+
+/* =====================================================
+   REORDENAR QUESTÕES
+===================================================== */
+
+function moveArrayItem(array, item, targetItem) {
+
+    const from = array.indexOf(item);
+    const to = array.indexOf(targetItem);
+
+    if (from < 0 || to < 0 || from === to) return;
+
+    array.splice(from, 1);
+
+    array.splice(
+        array.indexOf(targetItem),
+        0,
+        item
+    );
+
+}
+
+
+/* =====================================================
+   ARRASTAR E SOLTAR
+===================================================== */
+
+function setDropEvents(row, type, item) {
+
+    row.draggable = true;
+
+    row.addEventListener("dragstart", event => {
+
+        draggedItem = {
+            type,
+            id: item.id
+        };
+
+        event.dataTransfer.effectAllowed = "move";
+
+        event.dataTransfer.setData(
+            "text/plain",
+            `${type}:${item.id}`
+        );
+
+        row.classList.add("dragging");
+
+    });
+
+
+    row.addEventListener("dragend", () => {
+
+        row.classList.remove("dragging");
+
+        document.querySelectorAll(
+            ".drag-over, .drop-target"
+        ).forEach(element => {
+            element.classList.remove(
+                "drag-over",
+                "drop-target"
+            );
+        });
+
+        draggedItem = null;
+
+    });
+
+
+    row.addEventListener("dragover", event => {
+
+        if (!draggedItem || draggedItem.id === item.id) {
+            return;
+        }
+
+        event.preventDefault();
+
+        row.classList.add(
+            type === "folder" ? "drop-target" : "drag-over"
+        );
+
+    });
+
+
+    row.addEventListener("dragleave", () => {
+
+        row.classList.remove(
+            "drag-over",
+            "drop-target"
+        );
+
+    });
+
+
+    row.addEventListener("drop", event => {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        row.classList.remove(
+            "drag-over",
+            "drop-target"
+        );
+
+        if (!draggedItem || draggedItem.id === item.id) {
+            return;
+        }
+
+        const dragged = draggedItem;
+
+
+        // Questão ou pasta sendo solta em uma pasta.
+
+        if (type === "folder") {
+
+            const targetFolder = data.folders.find(
+                folder => folder.id === item.id
+            );
+
+            if (!targetFolder) return;
+
+
+            if (dragged.type === "question") {
+
+                const question = data.questionItems.find(
+                    q => q.id === dragged.id
+                );
+
+                if (question) {
+                    question.folderId = targetFolder.id;
+                }
+
+            }
+
+
+            if (dragged.type === "folder") {
+
+                const folder = data.folders.find(
+                    f => f.id === dragged.id
+                );
+
+                if (!folder) return;
+
+                // Impede colocar uma pasta dentro dela mesma
+                // ou dentro de uma de suas subpastas.
+
+                let ancestor = targetFolder;
+
+                while (ancestor) {
+
+                    if (ancestor.id === folder.id) {
+
+                        alert(
+                            "Não é possível mover uma pasta " +
+                            "para dentro dela mesma ou de uma subpasta."
+                        );
+
+                        return;
+
+                    }
+
+                    ancestor = data.folders.find(
+                        f => f.id === ancestor.parentId
+                    );
+
+                }
+
+                folder.parentId = targetFolder.id;
+
+            }
+
+        }
+
+
+        // Reordenar questões dentro da mesma pasta.
+
+        else if (
+            type === "question" &&
+            dragged.type === "question"
+        ) {
+
+            const draggedQuestion = data.questionItems.find(
+                q => q.id === dragged.id
+            );
+
+            const targetQuestion = data.questionItems.find(
+                q => q.id === item.id
+            );
+
+            if (
+                draggedQuestion &&
+                targetQuestion &&
+                draggedQuestion.folderId === targetQuestion.folderId
+            ) {
+
+                moveArrayItem(
+                    data.questionItems,
+                    draggedQuestion,
+                    targetQuestion
+                );
+
+            }
+
+        }
+
+        saveData();
+
+        renderFolderSystem();
+
+        renderQuestions();
+
+    });
+
+}
+
+
+/* =====================================================
+   RENDERIZAR PASTAS E QUESTÕES
+===================================================== */
+
+function renderFolderSystem() {
+
+    renderBreadcrumb();
+
+    refreshTagFilter();
+
+    const folderList = $("#folderList");
+    const questionList = $("#questionList");
+
+    folderList.innerHTML = "";
+    questionList.innerHTML = "";
+
+
+    // PASTAS DA LOCALIZAÇÃO ATUAL
+
+    const folders = data.folders.filter(
+        folder => folder.parentId === currentFolderId
+    );
+
+
+    folders.forEach(folder => {
+
+        const row = document.createElement("div");
+
+        row.className = "folder-row";
+
+
+        const open = document.createElement("button");
+
+        open.className = "folder-open";
+
+        open.innerHTML = `
+            <span>▰</span>
+            <span></span>
+        `;
+
+        open.lastElementChild.textContent = folder.name;
+
+        open.addEventListener("click", () => {
+
+            currentFolderId = folder.id;
+
+            renderFolderSystem();
+
+        });
+
+
+        const empty1 = document.createElement("span");
+        const empty2 = document.createElement("span");
+        const empty3 = document.createElement("span");
+
+
+        const remove = document.createElement("button");
+
+        remove.className = "delete-item";
+        remove.textContent = "×";
+        remove.title = "Deletar pasta";
+
+        remove.addEventListener("click", () => {
+            deleteFolder(folder.id);
+        });
+
+
+        row.append(
+            open,
+            empty1,
+            empty2,
+            empty3,
+            remove
+        );
+
+        setDropEvents(row, "folder", folder);
+
+        folderList.appendChild(row);
+
+    });
+
+
+    // QUESTÕES DA LOCALIZAÇÃO ATUAL
+
+    const questions = data.questionItems.filter(question =>
+        question.folderId === currentFolderId &&
+        questionMatchesFilters(question)
+    );
+
+
+    questions.forEach(question => {
+
+        question.tags ??= [];
+
+        const row = document.createElement("div");
+
+        row.className = "question-row";
+
+
+        // NOME E TAGS
+
+        const nameCell = document.createElement("div");
+
+        nameCell.className = "question-name-cell";
+
+
+        const name = document.createElement("input");
+
+        name.className = "question-name-input";
+        name.type = "text";
+        name.placeholder = "Questão sem nome";
+        name.value = question.name || "";
+
+        name.dataset.questionName = question.id;
+
+        name.addEventListener("change", () => {
+
+            question.name = name.value.trim();
+
+            saveData();
+
+            name.value = question.name;
+
+        });
+
+        nameCell.appendChild(name);
+
+
+        // MOSTRAR TAGS
+
+        const tagList = document.createElement("div");
+
+        tagList.className = "question-tags";
+
+        question.tags.forEach(tagId => {
+
+            const tag = data.tags.find(
+                item => item.id === tagId
+            );
+
+            if (!tag) return;
+
+            const chip = document.createElement("span");
+
+            chip.className = "question-tag";
+            chip.textContent = tag.name;
+
+            chip.style.background = tag.color || "#e8edf1";
+            chip.style.color = "#536575";
+
+            tagList.appendChild(chip);
+
+        });
+
+        nameCell.appendChild(tagList);
+
+
+        // BOTÃO DE EDITAR TAGS
+
+        const tagButton = document.createElement("button");
+
+        tagButton.type = "button";
+        tagButton.className = "question-tag-button";
+        tagButton.textContent = "＋ Tags";
+
+        tagButton.addEventListener("click", () => {
+            editQuestionTags(question);
+        });
+
+        nameCell.appendChild(tagButton);
+
+
+        // FEITA
+
+        const doneLabel = document.createElement("label");
+
+        doneLabel.className = "question-check";
+
+        const done = document.createElement("input");
+
+        done.type = "checkbox";
+        done.checked = !!question.done;
+        done.title = "Marcar como feita";
+
+        done.addEventListener("change", () => {
+
+            question.done = done.checked;
+
+            if (!question.done) {
+                question.correct = false;
+                question.wrong = false;
+            }
+
+            saveData();
+
+            renderFolderSystem();
+            renderQuestions();
+
+        });
+
+        doneLabel.appendChild(done);
+
+
+        // ACERTO
+
+        const correctLabel = document.createElement("label");
+
+        correctLabel.className = "question-check";
+
+        const correct = document.createElement("input");
+
+        correct.type = "checkbox";
+        correct.checked = !!question.correct;
+        correct.disabled = !question.done;
+        correct.title = "Marcar como acertada";
+
+        correct.addEventListener("change", () => {
+
+            question.correct = correct.checked;
+
+            if (question.correct) {
+                question.wrong = false;
+            }
+
+            saveData();
+
+            renderFolderSystem();
+            renderQuestions();
+
+        });
+
+        correctLabel.appendChild(correct);
+
+
+        // ERRO
+
+        const wrongLabel = document.createElement("label");
+
+        wrongLabel.className = "question-check";
+
+        const wrong = document.createElement("input");
+
+        wrong.type = "checkbox";
+        wrong.checked = !!question.wrong;
+        wrong.disabled = !question.done;
+        wrong.title = "Marcar como errada";
+
+        wrong.addEventListener("change", () => {
+
+            question.wrong = wrong.checked;
+
+            if (question.wrong) {
+                question.correct = false;
+            }
+
+            saveData();
+
+            renderFolderSystem();
+            renderQuestions();
+
+        });
+
+        wrongLabel.appendChild(wrong);
+
+
+        // ABRIR QUESTÃO
+
+        const open = document.createElement("button");
+
+        open.className = "question-open";
+        open.textContent = "↗";
+        open.title = "Abrir questão";
+
+        open.addEventListener("click", () => {
+            openQuestion(question.id);
+        });
+
+
+        row.append(
+            nameCell,
+            doneLabel,
+            correctLabel,
+            wrongLabel,
+            open
+        );
+
+        setDropEvents(row, "question", question);
+
+        questionList.appendChild(row);
+
+    });
+
+
+    // MENSAGEM DE LISTA VAZIA
+
+    const hasFolders = folders.length > 0;
+    const hasQuestions = questions.length > 0;
+
+    const hasUnfilteredQuestions = data.questionItems.some(
+        question => question.folderId === currentFolderId
+    );
+
+    $("#emptyQuestions").hidden = hasFolders || hasQuestions;
+
+    if (!hasFolders && !hasQuestions && hasUnfilteredQuestions) {
+
+        $("#emptyQuestions").hidden = false;
+
+        $("#emptyQuestions").textContent =
+            "Nenhuma questão corresponde aos filtros selecionados.";
+
+    } else {
+
+        $("#emptyQuestions").textContent =
+            "Esta pasta está vazia. Crie uma pasta ou adicione uma questão.";
+
+    }
+
+}
+
+
+/* =====================================================
+   INICIALIZAÇÃO
+===================================================== */
+
+renderFolderSystem();
