@@ -2920,3 +2920,867 @@ function renderFolderSystem() {
 ===================================================== */
 
 renderFolderSystem();
+
+
+
+/* =====================================================
+   MATÉRIAS E CRONOGRAMA
+===================================================== */
+
+// Novos dados. Os dados antigos são preservados.
+data.subjects ??= [];
+data.schedule ??= [];
+
+let scheduleDate = new Date();
+let scheduleView = "week";
+
+
+/* =====================================================
+   NAVEGAÇÃO ENTRE AS QUATRO TELAS
+===================================================== */
+
+function showPage(page) {
+
+    const pages = {
+        dashboard: null,
+        questions: $("#questionsPage"),
+        subjects: $("#subjectsPage"),
+        schedule: $("#schedulePage")
+    };
+
+    // Esconder as áreas do Dashboard.
+    dashboardElements.forEach(element => {
+        if (element) element.hidden = page !== "dashboard";
+    });
+
+    // Mostrar somente a tela selecionada.
+    Object.entries(pages).forEach(([name, element]) => {
+        if (element) element.hidden = name !== page;
+    });
+
+    // O painel direito pertence à Visão geral.
+    $(".right-panel").hidden = page !== "dashboard";
+
+    // Atualizar navegação.
+    const navItems = {
+        dashboard: $("#navDashboard"),
+        questions: $("#navQuestions"),
+        subjects: $("#navSubjects"),
+        schedule: $("#navSchedule")
+    };
+
+    Object.entries(navItems).forEach(([name, element]) => {
+        element.classList.toggle("active", name === page);
+    });
+
+    if (page === "questions") {
+        renderFolderSystem();
+    }
+
+    if (page === "subjects") {
+        renderSubjects();
+    }
+
+    if (page === "schedule") {
+        renderSchedule();
+    }
+
+}
+
+
+$("#navSubjects").addEventListener("click", event => {
+    event.preventDefault();
+    showPage("subjects");
+});
+
+
+$("#navSchedule").addEventListener("click", event => {
+    event.preventDefault();
+    showPage("schedule");
+});
+
+
+/* =====================================================
+   MATÉRIAS
+===================================================== */
+
+// Cadastrar matéria.
+
+$("#subjectForm").addEventListener("submit", event => {
+
+    event.preventDefault();
+
+    const name = $("#subjectName").value.trim();
+    const color = $("#subjectColor").value;
+
+    if (!name) return;
+
+    const alreadyExists = data.subjects.some(subject =>
+        subject.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (alreadyExists) {
+        alert("Essa matéria já está cadastrada.");
+        return;
+    }
+
+    data.subjects.push({
+        id: generateId(),
+        name,
+        color,
+        contents: []
+    });
+
+    saveData();
+
+    $("#subjectName").value = "";
+
+    renderSubjects();
+
+});
+
+
+function renderSubjects() {
+
+    const list = $("#subjectsList");
+
+    list.innerHTML = "";
+
+    $("#subjectCount").textContent =
+        `${data.subjects.length} matéria${data.subjects.length === 1 ? "" : "s"}`;
+
+    $("#emptySubjects").hidden = data.subjects.length > 0;
+
+    data.subjects.forEach(subject => {
+
+        subject.contents ??= [];
+
+        const card = document.createElement("article");
+        card.className = "subject-card";
+
+        // Cabeçalho.
+        const header = document.createElement("div");
+        header.className = "subject-card-header";
+
+        const nameArea = document.createElement("div");
+        nameArea.className = "subject-card-name";
+
+        const color = document.createElement("span");
+        color.className = "subject-color-dot";
+        color.style.background = subject.color || "#7895ad";
+
+        const title = document.createElement("h3");
+        title.textContent = subject.name;
+
+        nameArea.append(color, title);
+
+        const actions = document.createElement("div");
+        actions.className = "subject-actions";
+
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.textContent = "Editar";
+
+        edit.addEventListener("click", () => {
+            editSubject(subject.id);
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "Excluir";
+
+        remove.addEventListener("click", () => {
+            deleteSubject(subject.id);
+        });
+
+        actions.append(edit, remove);
+
+        header.append(nameArea, actions);
+
+        // Área de conteúdos estudados.
+        const contentArea = document.createElement("div");
+        contentArea.className = "subject-content-area";
+
+        const contentHeading = document.createElement("div");
+        contentHeading.className = "subject-content-heading";
+
+        const contentTitle = document.createElement("strong");
+        contentTitle.textContent =
+            `Conteúdos estudados (${subject.contents.length})`;
+
+        const addContent = document.createElement("button");
+        addContent.type = "button";
+        addContent.className = "content-add-button";
+        addContent.textContent = "＋ Registrar conteúdo";
+
+        addContent.addEventListener("click", () => {
+            addSubjectContent(subject.id);
+        });
+
+        contentHeading.append(contentTitle, addContent);
+
+        const contentList = document.createElement("div");
+        contentList.className = "subject-content-list";
+
+        if (!subject.contents.length) {
+
+            const empty = document.createElement("p");
+            empty.className = "subject-no-content";
+            empty.textContent = "Nenhum conteúdo registrado ainda.";
+
+            contentList.appendChild(empty);
+
+        } else {
+
+            subject.contents
+                .slice()
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .forEach(content => {
+
+                    const item = document.createElement("div");
+                    item.className = "subject-content-item";
+
+                    const text = document.createElement("span");
+                    text.textContent = content.text;
+
+                    const date = document.createElement("small");
+                    date.textContent = parseDate(content.date)
+                        .toLocaleDateString("pt-BR");
+
+                    item.append(text, date);
+
+                    contentList.appendChild(item);
+
+                });
+
+        }
+
+        contentArea.append(contentHeading, contentList);
+
+        card.append(header, contentArea);
+
+        list.appendChild(card);
+
+    });
+
+}
+
+
+function editSubject(subjectId) {
+
+    const subject = data.subjects.find(
+        item => item.id === subjectId
+    );
+
+    if (!subject) return;
+
+    const newName = prompt("Nome da matéria:", subject.name);
+
+    if (newName === null || !newName.trim()) return;
+
+    const cleanName = newName.trim();
+
+    const duplicate = data.subjects.some(item =>
+        item.id !== subjectId &&
+        item.name.toLowerCase() === cleanName.toLowerCase()
+    );
+
+    if (duplicate) {
+        alert("Já existe uma matéria com esse nome.");
+        return;
+    }
+
+    const newColor = prompt(
+        "Cor da matéria em hexadecimal (ex.: #7895ad):",
+        subject.color || "#7895ad"
+    );
+
+    if (newColor === null) return;
+
+    const validColor = /^#[0-9a-fA-F]{6}$/.test(newColor.trim());
+
+    if (!validColor) {
+        alert("Digite uma cor hexadecimal válida, como #7895ad.");
+        return;
+    }
+
+    subject.name = cleanName;
+    subject.color = newColor.trim();
+
+    saveData();
+    renderSubjects();
+    renderSchedule();
+
+}
+
+
+function deleteSubject(subjectId) {
+
+    const subject = data.subjects.find(
+        item => item.id === subjectId
+    );
+
+    if (!subject) return;
+
+    if (!confirm(
+        `Excluir a matéria "${subject.name}"?\n\n` +
+        "As atividades do cronograma continuarão salvas, mas deixarão de estar vinculadas a essa matéria."
+    )) return;
+
+    data.subjects = data.subjects.filter(
+        item => item.id !== subjectId
+    );
+
+    // Preserva as atividades, removendo apenas o vínculo.
+    data.schedule.forEach(activity => {
+        if (activity.subjectId === subjectId) {
+            activity.subjectId = null;
+        }
+    });
+
+    saveData();
+
+    renderSubjects();
+    renderSchedule();
+
+}
+
+
+function addSubjectContent(subjectId) {
+
+    const subject = data.subjects.find(
+        item => item.id === subjectId
+    );
+
+    if (!subject) return;
+
+    const text = prompt(
+        `Qual conteúdo você estudou em ${subject.name}?`
+    );
+
+    if (!text || !text.trim()) return;
+
+    const date = prompt(
+        "Data em que estudou (AAAA-MM-DD):",
+        dateKey(new Date())
+    );
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        alert("Data inválida. Use o formato AAAA-MM-DD.");
+        return;
+    }
+
+    subject.contents ??= [];
+
+    subject.contents.push({
+        id: generateId(),
+        text: text.trim(),
+        date
+    });
+
+    saveData();
+
+    renderSubjects();
+
+}
+
+
+/* =====================================================
+   CRONOGRAMA - FUNÇÕES DE DATA
+===================================================== */
+
+function getWeekStart(date) {
+
+    const result = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+    );
+
+    result.setDate(result.getDate() - result.getDay());
+
+    return result;
+
+}
+
+
+function addDays(date, amount) {
+
+    const result = new Date(date);
+
+    result.setDate(result.getDate() + amount);
+
+    return result;
+
+}
+
+
+function formatScheduleDate(date) {
+
+    return date.toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+    });
+
+}
+
+
+/* =====================================================
+   CRONOGRAMA - ESCOLHER MATÉRIA
+===================================================== */
+
+function chooseScheduleSubject(currentId = null) {
+
+    if (!data.subjects.length) {
+
+        alert("Cadastre uma matéria antes de criar uma atividade.");
+
+        return undefined;
+
+    }
+
+    const options = data.subjects.map((subject, index) => {
+
+        const selected = subject.id === currentId ? " (atual)" : "";
+
+        return `${index + 1} - ${subject.name}${selected}`;
+
+    }).join("\n");
+
+    const answer = prompt(
+        "Escolha a matéria:\n\n" + options +
+        "\n\nDigite o número ou deixe vazio para não vincular:"
+    );
+
+    if (answer === null) return undefined;
+
+    if (!answer.trim()) return null;
+
+    const index = Number(answer) - 1;
+
+    if (!Number.isInteger(index) || !data.subjects[index]) {
+
+        alert("Opção inválida.");
+
+        return undefined;
+
+    }
+
+    return data.subjects[index].id;
+
+}
+
+
+/* =====================================================
+   CRONOGRAMA - CRIAR ATIVIDADE
+===================================================== */
+
+$("#addScheduleActivity").addEventListener("click", () => {
+
+    const subjectId = chooseScheduleSubject();
+
+    if (subjectId === undefined) return;
+
+    const title = prompt("O que você pretende estudar?");
+
+    if (!title || !title.trim()) return;
+
+    const date = prompt(
+        "Data da atividade (AAAA-MM-DD):",
+        dateKey(scheduleDate)
+    );
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        alert("Data inválida. Use o formato AAAA-MM-DD.");
+        return;
+    }
+
+    const time = prompt(
+        "Horário (HH:MM):",
+        "14:00"
+    );
+
+    if (!time || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+        alert("Horário inválido. Use o formato HH:MM.");
+        return;
+    }
+
+    data.schedule.push({
+        id: generateId(),
+        title: title.trim(),
+        subjectId,
+        date,
+        time,
+        done: false
+    });
+
+    saveData();
+
+    renderSchedule();
+
+});
+
+
+/* =====================================================
+   CRONOGRAMA - EDITAR ATIVIDADE
+===================================================== */
+
+function editScheduleActivity(activityId) {
+
+    const activity = data.schedule.find(
+        item => item.id === activityId
+    );
+
+    if (!activity) return;
+
+    const title = prompt(
+        "Descrição da atividade:",
+        activity.title
+    );
+
+    if (title === null || !title.trim()) return;
+
+    const subjectId = chooseScheduleSubject(activity.subjectId);
+
+    if (subjectId === undefined) return;
+
+    const date = prompt(
+        "Data (AAAA-MM-DD):",
+        activity.date
+    );
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        alert("Data inválida.");
+        return;
+    }
+
+    const time = prompt(
+        "Horário (HH:MM):",
+        activity.time
+    );
+
+    if (!time || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+        alert("Horário inválido.");
+        return;
+    }
+
+    activity.title = title.trim();
+    activity.subjectId = subjectId;
+    activity.date = date;
+    activity.time = time;
+
+    saveData();
+
+    renderSchedule();
+
+}
+
+
+/* =====================================================
+   CRONOGRAMA - EXCLUIR ATIVIDADE
+===================================================== */
+
+function deleteScheduleActivity(activityId) {
+
+    if (!confirm("Deseja excluir esta atividade do cronograma?")) {
+        return;
+    }
+
+    data.schedule = data.schedule.filter(
+        item => item.id !== activityId
+    );
+
+    saveData();
+
+    renderSchedule();
+
+}
+
+
+/* =====================================================
+   CRONOGRAMA - EXIBIR ATIVIDADES
+===================================================== */
+
+function renderScheduleActivities(container, date) {
+
+    const key = dateKey(date);
+
+    const activities = data.schedule
+        .filter(activity => activity.date === key)
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+    if (!activities.length) {
+
+        const empty = document.createElement("p");
+        empty.className = "schedule-day-empty";
+        empty.textContent = "Sem atividades";
+
+        container.appendChild(empty);
+
+        return;
+
+    }
+
+    activities.forEach(activity => {
+
+        const subject = data.subjects.find(
+            item => item.id === activity.subjectId
+        );
+
+        const card = document.createElement("article");
+        card.className = "schedule-activity";
+
+        if (activity.done) {
+            card.classList.add("completed");
+        }
+
+        if (subject) {
+            card.style.borderLeftColor = subject.color || "#7895ad";
+        }
+
+        const time = document.createElement("p");
+        time.className = "schedule-activity-time";
+        time.textContent = activity.time;
+
+        const title = document.createElement("p");
+        title.className = "schedule-activity-title";
+        title.textContent = activity.title;
+
+        const subjectName = document.createElement("span");
+        subjectName.className = "schedule-activity-subject";
+        subjectName.textContent = subject
+            ? subject.name
+            : "Sem matéria vinculada";
+
+        if (subject) {
+            subjectName.style.color = subject.color || "#7895ad";
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "schedule-activity-actions";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !!activity.done;
+        checkbox.title = "Marcar como concluída";
+
+        checkbox.addEventListener("change", () => {
+
+            activity.done = checkbox.checked;
+
+            saveData();
+
+            renderSchedule();
+
+        });
+
+        const doneLabel = document.createElement("span");
+        doneLabel.textContent = "Concluída";
+        doneLabel.style.fontSize = "9px";
+        doneLabel.style.color = "#8493a0";
+
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.textContent = "Editar";
+
+        edit.addEventListener("click", () => {
+            editScheduleActivity(activity.id);
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "Excluir";
+
+        remove.addEventListener("click", () => {
+            deleteScheduleActivity(activity.id);
+        });
+
+        actions.append(checkbox, doneLabel, edit, remove);
+
+        card.append(time, title, subjectName, actions);
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+/* =====================================================
+   CRONOGRAMA - RENDERIZAÇÃO
+===================================================== */
+
+function renderSchedule() {
+
+    const content = $("#scheduleContent");
+
+    content.innerHTML = "";
+
+    $("#weekViewButton").classList.toggle(
+        "active",
+        scheduleView === "week"
+    );
+
+    $("#dayViewButton").classList.toggle(
+        "active",
+        scheduleView === "day"
+    );
+
+    if (scheduleView === "week") {
+
+        const start = getWeekStart(scheduleDate);
+        const end = addDays(start, 6);
+
+        $("#scheduleDateTitle").textContent =
+            `${start.toLocaleDateString("pt-BR", {
+                day: "numeric",
+                month: "short"
+            })} – ${end.toLocaleDateString("pt-BR", {
+                day: "numeric",
+                month: "short",
+                year: "numeric"
+            })}`;
+
+        const week = document.createElement("div");
+        week.className = "schedule-week";
+
+        const todayKey = dateKey(new Date());
+
+        for (let i = 0; i < 7; i++) {
+
+            const date = addDays(start, i);
+            const key = dateKey(date);
+
+            const day = document.createElement("div");
+            day.className = "schedule-day";
+
+            if (key === todayKey) {
+                day.classList.add("today");
+            }
+
+            const heading = document.createElement("div");
+            heading.className = "schedule-day-heading";
+
+            const weekday = document.createElement("span");
+            weekday.textContent = date.toLocaleDateString("pt-BR", {
+                weekday: "short"
+            }).replace(".", "");
+
+            const number = document.createElement("strong");
+            number.textContent = date.getDate();
+
+            heading.append(weekday, number);
+
+            const activities = document.createElement("div");
+            activities.className = "schedule-day-activities";
+
+            renderScheduleActivities(activities, date);
+
+            day.append(heading, activities);
+
+            week.appendChild(day);
+
+        }
+
+        content.appendChild(week);
+
+    } else {
+
+        $("#scheduleDateTitle").textContent =
+            formatScheduleDate(scheduleDate);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "schedule-day-single";
+
+        const day = document.createElement("div");
+        day.className = "schedule-day today";
+
+        const heading = document.createElement("div");
+        heading.className = "schedule-day-heading";
+
+        const weekday = document.createElement("span");
+        weekday.textContent = scheduleDate.toLocaleDateString("pt-BR", {
+            weekday: "long"
+        });
+
+        const number = document.createElement("strong");
+        number.textContent = scheduleDate.getDate();
+
+        heading.append(weekday, number);
+
+        const activities = document.createElement("div");
+        activities.className = "schedule-day-activities";
+
+        renderScheduleActivities(activities, scheduleDate);
+
+        day.append(heading, activities);
+        wrapper.appendChild(day);
+
+        content.appendChild(wrapper);
+
+    }
+
+}
+
+
+/* =====================================================
+   CRONOGRAMA - CONTROLES
+===================================================== */
+
+$("#weekViewButton").addEventListener("click", () => {
+
+    scheduleView = "week";
+
+    renderSchedule();
+
+});
+
+
+$("#dayViewButton").addEventListener("click", () => {
+
+    scheduleView = "day";
+
+    renderSchedule();
+
+});
+
+
+$("#schedulePrev").addEventListener("click", () => {
+
+    scheduleDate = addDays(
+        scheduleDate,
+        scheduleView === "week" ? -7 : -1
+    );
+
+    renderSchedule();
+
+});
+
+
+$("#scheduleNext").addEventListener("click", () => {
+
+    scheduleDate = addDays(
+        scheduleDate,
+        scheduleView === "week" ? 7 : 1
+    );
+
+    renderSchedule();
+
+});
+
+
+$("#scheduleToday").addEventListener("click", () => {
+
+    scheduleDate = new Date();
+
+    renderSchedule();
+
+});
+
+
+/* =====================================================
+   FINALIZAÇÃO
+===================================================== */
+
+saveData();

@@ -39,12 +39,12 @@
                 Questões
             </a>
 
-            <a href="#" class="nav-item disabled">
+            <a href="#" class="nav-item" id="navSubjects">
                 <span>▧</span>
                 Matérias
             </a>
 
-            <a href="#" class="nav-item disabled">
+            <a href="#" class="nav-item" id="navSchedule">
                 <span>▤</span>
                 Cronograma
             </a>
@@ -223,6 +223,113 @@
 
     </section>
 
+
+
+<!-- =====================================
+     TELA DE MATÉRIAS
+===================================== -->
+
+<section class="subjects-page" id="subjectsPage" hidden>
+
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">ORGANIZAÇÃO DOS ESTUDOS</p>
+            <h1>Minhas matérias</h1>
+            <p class="subtitle">Organize suas disciplinas e registre o que já estudou.</p>
+        </div>
+    </header>
+
+    <section class="subject-form panel">
+        <div>
+            <p class="eyebrow">NOVA DISCIPLINA</p>
+            <h2>Cadastrar matéria</h2>
+        </div>
+
+        <form id="subjectForm" class="subject-form-fields">
+            <input
+                id="subjectName"
+                type="text"
+                maxlength="50"
+                placeholder="Ex.: Matemática"
+                required
+            >
+
+            <label class="color-picker-label">
+                Cor
+                <input id="subjectColor" type="color" value="#7895ad">
+            </label>
+
+            <button type="submit" class="question-create-button">
+                ＋ Adicionar matéria
+            </button>
+        </form>
+    </section>
+
+    <div class="subjects-heading">
+        <h2>Minhas disciplinas</h2>
+        <span id="subjectCount">0 matérias</span>
+    </div>
+
+    <div id="subjectsList" class="subjects-list"></div>
+
+    <div id="emptySubjects" class="empty-questions">
+        <span>✦</span>
+        <strong>Nenhuma matéria cadastrada</strong>
+        <p>Adicione sua primeira disciplina para começar.</p>
+    </div>
+
+</section>
+
+
+<!-- =====================================
+     TELA DE CRONOGRAMA
+===================================== -->
+
+<section class="schedule-page" id="schedulePage" hidden>
+
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">PLANEJAMENTO</p>
+            <h1>Meu cronograma</h1>
+            <p class="subtitle">Organize seus horários e acompanhe suas atividades.</p>
+        </div>
+    </header>
+
+    <section class="schedule-panel panel">
+
+        <div class="schedule-toolbar">
+
+            <div class="schedule-view-switch">
+                <button type="button" id="weekViewButton" class="active">
+                    Semanal
+                </button>
+
+                <button type="button" id="dayViewButton">
+                    Diário
+                </button>
+            </div>
+
+            <button type="button" id="addScheduleActivity" class="question-create-button">
+                ＋ Nova atividade
+            </button>
+
+        </div>
+
+        <div class="schedule-date-navigation">
+            <button type="button" id="schedulePrev">‹</button>
+
+            <strong id="scheduleDateTitle"></strong>
+
+            <button type="button" id="scheduleNext">›</button>
+
+            <button type="button" id="scheduleToday">Hoje</button>
+        </div>
+
+        <div id="scheduleContent"></div>
+
+    </section>
+
+</section>
 
 
 
