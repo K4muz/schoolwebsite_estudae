@@ -94,6 +94,10 @@ function loadData() {
     };
 }
 
+let selectedTagFilters = [];
+let selectedStatusFilter = "all";
+let draggedItem = null;
+
 let data = loadData();
 
 function saveData() {
@@ -521,7 +525,7 @@ function renderQuestions() {
 
 function renderAll() {
 
-    renderMainCalendar();
+    renderCalendar();
 
     renderFrequency();
 
@@ -663,7 +667,7 @@ $("#prevMonth").addEventListener("click", () => {
 
     viewDate.setMonth(viewDate.getMonth() - 1);
 
-    renderMainCalendar();
+    renderCalendar();
 
 });
 
@@ -672,7 +676,7 @@ $("#nextMonth").addEventListener("click", () => {
 
     viewDate.setMonth(viewDate.getMonth() + 1);
 
-    renderMainCalendar();
+    renderCalendar();
 
 });
 
@@ -1872,10 +1876,6 @@ renderQuestions();
 
 data.tags ??= [];
 
-let selectedTagFilters = [];
-let selectedStatusFilter = "all";
-let draggedItem = null;
-
 
 /* =====================================================
    ESTILOS
@@ -2160,16 +2160,47 @@ function refreshTagFilter() {
    CRIAR, EDITAR E EXCLUIR TAGS
 ===================================================== */
 
+
+
 function manageQuestionTags() {
 
+    if (!data.tags) data.tags = [];
+
     const action = prompt(
-        "Digite o nome da nova tag.\n" +
-        "Para editar ou excluir uma tag, digite: gerenciar"
+        "GERENCIAR TAGS\n\n" +
+        "1 - Criar nova tag\n" +
+        "2 - Editar uma tag\n" +
+        "3 - Excluir uma tag\n\n" +
+        "Digite o número da opção:"
     );
 
     if (!action) return;
 
-    if (action.trim().toLowerCase() === "gerenciar") {
+    // CRIAR TAG
+    if (action === "1") {
+
+        const name = prompt("Nome da nova tag:");
+
+        if (!name || !name.trim()) return;
+
+        const cleanName = name.trim();
+
+        if (data.tags.some(tag =>
+            tag.name.toLowerCase() === cleanName.toLowerCase()
+        )) {
+            alert("Já existe uma tag com esse nome.");
+            return;
+        }
+
+        data.tags.push({
+            id: generateId(),
+            name: cleanName,
+            color: tagColor(data.tags.length)
+        });
+    }
+
+    // EDITAR TAG
+    else if (action === "2") {
 
         if (!data.tags.length) {
             alert("Você ainda não criou nenhuma tag.");
@@ -2181,81 +2212,75 @@ function manageQuestionTags() {
         ).join("\n");
 
         const choice = Number(prompt(
-            `Suas tags:\n${list}\n\n` +
-            "Digite o número da tag que deseja editar ou excluir:"
+            "Qual tag deseja editar?\n\n" + list
         ));
 
         const tag = data.tags[choice - 1];
 
         if (!tag) return;
 
-        const operation = prompt(
-            `Tag: ${tag.name}\nDigite "editar" ou "excluir":`
-        );
+        const newName = prompt("Novo nome:", tag.name);
 
-        if (!operation) return;
+        if (!newName || !newName.trim()) return;
 
-        if (operation.trim().toLowerCase() === "excluir") {
+        const cleanName = newName.trim();
 
-            if (!confirm(
-                `Excluir a tag "${tag.name}" de todas as questões?`
-            )) return;
-
-            data.tags = data.tags.filter(
-                item => item.id !== tag.id
-            );
-
-            data.questionItems.forEach(question => {
-
-                question.tags = (question.tags || []).filter(
-                    id => id !== tag.id
-                );
-
-            });
-
-            selectedTagFilters = selectedTagFilters.filter(
-                id => id !== tag.id
-            );
-
-        } else if (operation.trim().toLowerCase() === "editar") {
-
-            const newName = prompt(
-                "Novo nome da tag:",
-                tag.name
-            );
-
-            if (newName && newName.trim()) {
-                tag.name = newName.trim();
-            }
-
-        }
-
-    } else {
-
-        const name = action.trim();
-
-        if (data.tags.some(tag =>
-            tag.name.toLowerCase() === name.toLowerCase()
+        if (data.tags.some(item =>
+            item.id !== tag.id &&
+            item.name.toLowerCase() === cleanName.toLowerCase()
         )) {
             alert("Já existe uma tag com esse nome.");
             return;
         }
 
-        data.tags.push({
-            id: generateId(),
-            name,
-            color: tagColor(data.tags.length)
-        });
+        tag.name = cleanName;
+    }
 
+    // EXCLUIR TAG
+    else if (action === "3") {
+
+        if (!data.tags.length) {
+            alert("Você ainda não criou nenhuma tag.");
+            return;
+        }
+
+        const list = data.tags.map((tag, index) =>
+            `${index + 1}. ${tag.name}`
+        ).join("\n");
+
+        const choice = Number(prompt(
+            "Qual tag deseja excluir?\n\n" + list
+        ));
+
+        const tag = data.tags[choice - 1];
+
+        if (!tag) return;
+
+        if (!confirm(
+            `Excluir a tag "${tag.name}" da lista de filtros?`
+        )) return;
+
+        // Remove somente do cadastro de filtros
+        data.tags = data.tags.filter(
+            item => item.id !== tag.id
+        );
+
+        selectedTagFilters = selectedTagFilters.filter(
+            id => id !== tag.id
+        );
+    }
+
+    else {
+        alert("Opção inválida.");
+        return;
     }
 
     saveData();
-
     refreshTagFilter();
-
     renderFolderSystem();
-
 }
+
+
 
 
 /* =====================================================
